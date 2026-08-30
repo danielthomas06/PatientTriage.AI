@@ -343,41 +343,6 @@ The patient is still correctly escalated with the network unplugged and no
 model in the loop. Degraded mode may know *less*; it must never claim to
 know *more* — `test_keyword_fallback_never_asserts_a_negative` pins this.
 
-## Real bugs the tests (and live testing) caught
-
-**The tripwire missed the flagship case.** The original `cardiac_radiation`
-pattern required the word "chest" near "jaw." But *"pain in my upper
-stomach that goes into my jaw"* contains no cardiac word at all — exactly
-the inferior MI this system exists to catch, and the pattern sailed past
-it. Fixed by anchoring on the **radiation verb** ("goes into," "spreads
-to," "radiates") rather than the body part.
-
-**Linear branch-weight discounting wasn't enough.** A real "feeling dizzy,
-haven't eaten" case still surfaced eye-exposure and allergy questions
-before the relevant vertigo one, because a floor-weighted unrelated
-Orange-tier check could nearly keep pace with the true branch under a
-linear discount. Fixed by cubing the relevance ratio in `voi.py`.
-
-**Sex-only exclusion missed age.** A 6-month-old, recorded female, with
-"baby has a high fever" was asked about vaginal bleeding — the model's own
-reasoning cited "a critical safety rule-out for pregnancy complications."
-Sex correctly excluded nothing; nothing was checking age at all. Fixed with
-an age floor (`MINIMUM_PLAUSIBLE_PREGNANCY_AGE`) *and* a defense-in-depth
-fix — the model had literally been told the patient's age as "0.5" and
-reasoned past it; `_describe_age()` now renders it as "6 months old (an
-infant)" everywhere a model sees an age.
-
-**Accepted kiosk patients never left the intake queue.** `Encounter`
-objects are never removed from memory at Accept, only reset when that same
-kiosk starts its next patient — so `queue_rows()` needed an explicit
-`ref not in board.patients` exclusion, which it didn't have.
-
-**A re-checked, already-admitted patient never reached the waiting
-board.** `Board.observe()` existed and was fully implemented, but nothing
-in `serve.py` ever called it — a nurse recording a fresh, more severe
-finding on a patient already on the board had no effect on their place in
-the queue. Every write path now calls `Encounter._sync_board()`.
-
 ## Why fifty branches cost no more than one
 
 Within a branch the first match wins, ordered most-urgent-first — so a
