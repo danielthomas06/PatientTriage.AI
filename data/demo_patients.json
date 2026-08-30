@@ -1,0 +1,351 @@
+{
+  "_readme": "Demo dataset for the Round 2 prototype brief: 15-20 simulated patient records run through the real application (serve.py's own /api endpoints), plus a 3x surge replay. Every check_id below is a real CTAS discriminator id from triage/protocols/ctas.py. 'staff_observations' are posted via /api/observe -- the same endpoint a nurse uses to record a direct finding -- so the expected category is guaranteed regardless of which model tier (hosted / local / keyword-fallback) happens to be active during the run. 'narrative' and 'scripted_answers' still drive the real extraction -> VOI ranking -> choose_next() -> parse() pipeline end to end; their outcome is additional, never something the expected category depends on, matching the engine's own never-lowers-what-was-already-found rule.",
+  "baseline_arrivals_per_hour": 15,
+  "patients": [
+    {
+      "id": "P01_ambiguous_epigastric_mi",
+      "tags": ["ambiguous", "atypical", "known_record"],
+      "origin": "kiosk",
+      "identity": { "name": "Margaret Doyle", "age": 68, "sex": "F", "patient_id": "NHS-448-201-7734" },
+      "narrative": "Pain in my upper stomach since this morning, feel sick and a bit sweaty.",
+      "staff_observations": [
+        { "check_id": "pain_radiating", "positive": true, "note": "on direct questioning, pain radiates up into the jaw" }
+      ],
+      "scripted_answers": {
+        "pain_radiating": "Yes, it goes up into my jaw a bit.",
+        "moderate_pain_central": "About a 6 out of 10.",
+        "persistent_vomiting": "No, I haven't been sick.",
+        "cardiac_history": "No, no heart problems before."
+      },
+      "default_reply": "No, nothing like that.",
+      "expected": {
+        "category": "ORANGE",
+        "rationale": "pain_radiating fires Orange on the chest_pain branch even though the presenting complaint points at abdominal_pain",
+        "notes": "the flagship ambiguity case -- an inferior MI described as stomach pain"
+      }
+    },
+    {
+      "id": "P02_infant_fever_flacc",
+      "tags": ["paediatric", "zero_history"],
+      "origin": "kiosk",
+      "identity": { "name": "", "age_months": 6, "sex": "F", "patient_id": "" },
+      "narrative": "Baby is having high fever since yesterday, very fussy and won't settle.",
+      "flacc": { "face": 1, "legs": 0, "activity": 1, "cry": 2, "consolability": 1 },
+      "staff_observations": [
+        { "check_id": "fever_looks_unwell", "positive": true, "note": "febrile, irritable, not consolable" }
+      ],
+      "scripted_answers": {},
+      "default_reply": "No.",
+      "expected": {
+        "category": "YELLOW",
+        "rationale": "fever_looks_unwell (Level 3) plus a moderate FLACC score",
+        "notes": "pre-verbal infant -- self-report pain questions are diverted to the FLACC observation, never asked directly"
+      }
+    },
+    {
+      "id": "P03_geriatric_falsely_reassuring",
+      "tags": ["geriatric", "known_record"],
+      "origin": "kiosk",
+      "identity": { "name": "Alan Whitfield", "age": 81, "sex": "M", "patient_id": "NHS-991-044-2210" },
+      "narrative": "Off his legs for two days, productive cough, generally unwell. On bisoprolol and apixaban.",
+      "vitals": { "pulse": 78, "temperature": 37.4, "respiratory_rate": 24 },
+      "staff_observations": [
+        { "check_id": "resp_distress_mild", "positive": true, "note": "mild increased work of breathing on exam" }
+      ],
+      "scripted_answers": {
+        "resp_distress_mild": "Yes, a little breathless when he moves around."
+      },
+      "default_reply": "No.",
+      "expected": {
+        "category": "YELLOW",
+        "rationale": "resp_distress_mild (Level 3) -- the pulse and temperature read reassuring only because rate-limiting medication (from his record) makes them unreliable",
+        "notes": "the geriatric trap: normal-looking vitals in a patient who cannot mount the expected response"
+      }
+    },
+    {
+      "id": "P04_zero_history_abdominal",
+      "tags": ["zero_history", "ambiguous"],
+      "origin": "kiosk",
+      "identity": { "name": "", "age": null, "sex": "", "patient_id": "" },
+      "narrative": "Gestures to abdomen, visibly distressed. Minimal shared language, no ID.",
+      "staff_observations": [
+        { "check_id": "severe_pain_central", "positive": true, "note": "gestured to abdomen, grimacing, scored 8/10 via interpreter gesture scale" }
+      ],
+      "scripted_answers": {},
+      "default_reply": "No.",
+      "expected": {
+        "category": "ORANGE",
+        "rationale": "severe_pain_central confirmed directly, even though nothing else about this patient is known",
+        "notes": "low branch-attribution confidence is the CORRECT output here, not a failure -- decide() still acts on the one confirmed positive"
+      }
+    },
+    {
+      "id": "P05_cardiac_red",
+      "tags": ["typical", "critical"],
+      "origin": "kiosk",
+      "identity": { "name": "David Okafor", "age": 55, "sex": "M", "patient_id": "" },
+      "narrative": "Sudden crushing chest pain, sweating, can't catch my breath.",
+      "vitals": { "spo2": 88, "on_oxygen": false, "systolic_bp": 96, "pulse": 128 },
+      "staff_observations": [],
+      "scripted_answers": {
+        "pain_radiating": "Yes, into my left arm and jaw.",
+        "cannot_complete_sentence": "Yes, I can barely get a sentence out."
+      },
+      "default_reply": "No.",
+      "expected": {
+        "category": "RED",
+        "rationale": "spo2_under_90 and the compensated-shock rule (pulse over 120 with systolic under 100) both fire Red from vitals alone",
+        "notes": "the textbook case -- should_stop() should halt the interview the moment this lands"
+      }
+    },
+    {
+      "id": "P06_minor_ankle_sprain",
+      "tags": ["typical"],
+      "origin": "kiosk",
+      "identity": { "name": "Jamie Ellis", "age": 24, "sex": "F", "patient_id": "" },
+      "narrative": "Twisted my ankle playing five-a-side, hurts to walk on but I can put some weight on it.",
+      "scripted_answers": {
+        "moderate_pain_peripheral": "About a 5 out of 10.",
+        "high_risk_moi": "No, just twisted it running."
+      },
+      "default_reply": "No.",
+      "expected": {
+        "category": "GREEN",
+        "rationale": "moderate peripheral pain, no high-risk mechanism",
+        "notes": "a plain, low-acuity walk-in -- the majority case the department actually sees"
+      }
+    },
+    {
+      "id": "P07_anaphylaxis",
+      "tags": ["typical", "critical"],
+      "origin": "kiosk",
+      "identity": { "name": "Tom Fischer", "age": 30, "sex": "M", "patient_id": "" },
+      "narrative": "Ate something with peanuts, lips swelling, feels like my throat is tightening.",
+      "staff_observations": [
+        { "check_id": "throat_or_tongue_swelling", "positive": true, "note": "visible lip and tongue swelling on exam" }
+      ],
+      "scripted_answers": {
+        "throat_or_tongue_swelling": "Yes, my throat feels like it's closing up.",
+        "widespread_hives": "Yes, hives all over my chest and arms."
+      },
+      "default_reply": "No.",
+      "expected": {
+        "category": "ORANGE",
+        "rationale": "throat_or_tongue_swelling fires Orange on the allergic_reaction branch",
+        "notes": "airway involvement caught before it becomes shock/resp_distress_severe"
+      }
+    },
+    {
+      "id": "P08_stroke_geriatric",
+      "tags": ["geriatric", "critical"],
+      "origin": "kiosk",
+      "identity": { "name": "Rosemary Clark", "age": 77, "sex": "F", "patient_id": "" },
+      "narrative": "Sudden facial droop and slurred speech, family noticed twenty minutes ago.",
+      "staff_observations": [
+        { "check_id": "new_neuro_deficit", "positive": true, "note": "facial droop, slurred speech, right arm weakness confirmed on exam" }
+      ],
+      "scripted_answers": {
+        "new_neuro_deficit": "Yes, my face feels droopy and my speech is slurred, it started suddenly."
+      },
+      "default_reply": "No.",
+      "expected": {
+        "category": "ORANGE",
+        "rationale": "new_neuro_deficit fires Orange on the headache branch (FAST-positive, alert, no airway compromise)",
+        "notes": "geriatric, time-critical, but correctly Orange rather than Red -- there is no depressed consciousness here"
+      }
+    },
+    {
+      "id": "P09_toddler_looks_unwell",
+      "tags": ["paediatric"],
+      "origin": "kiosk",
+      "identity": { "name": "", "age": 2, "sex": "F", "patient_id": "" },
+      "narrative": "Two-year-old with a fever, off her food, mum says she's just not herself.",
+      "vitals": { "looks_unwell": true },
+      "staff_observations": [
+        { "check_id": "fever_looks_unwell", "positive": true, "note": "febrile, lethargic, not herself per mother" }
+      ],
+      "scripted_answers": {},
+      "default_reply": "No.",
+      "expected": {
+        "category": "YELLOW",
+        "rationale": "fever_looks_unwell, Level 3",
+        "notes": "scored on the paediatric pathway, never the adult vital-sign chart"
+      }
+    },
+    {
+      "id": "P10_self_harm_risk",
+      "tags": ["typical", "critical", "sensitive"],
+      "origin": "kiosk",
+      "identity": { "name": "", "age": 19, "sex": "F", "patient_id": "" },
+      "narrative": "Says she doesn't want to be here anymore, hasn't slept in days.",
+      "staff_observations": [
+        { "check_id": "self_harm_risk", "positive": true, "note": "patient discloses active thoughts of self-harm on direct, sensitive questioning" }
+      ],
+      "scripted_answers": {},
+      "default_reply": "No.",
+      "expected": {
+        "category": "ORANGE",
+        "rationale": "self_harm_risk fires Orange on the mental_health branch",
+        "notes": "Source.SENSITIVE -- never asked via the keyword tier, only ever recorded as a direct staff observation"
+      }
+    },
+    {
+      "id": "P11_third_trimester_bleeding",
+      "tags": ["typical", "critical"],
+      "origin": "kiosk",
+      "identity": { "name": "Aisha Bello", "age": 29, "sex": "F", "patient_id": "" },
+      "narrative": "I'm 32 weeks pregnant and I'm bleeding, it's a lot.",
+      "staff_observations": [
+        { "check_id": "bleeding_third_trimester", "positive": true, "note": "32 weeks gestation, heavy vaginal bleeding observed" }
+      ],
+      "scripted_answers": {
+        "bleeding_third_trimester": "32 weeks, and it's soaking through quickly."
+      },
+      "default_reply": "No.",
+      "expected": {
+        "category": "RED",
+        "rationale": "bleeding_third_trimester is one of the two Level-1 second-order modifiers in the obstetric table (Sec 4.3.2)",
+        "notes": "the one branch in the pack where a second-order modifier outranks every first-order check except the shared resuscitation list"
+      }
+    },
+    {
+      "id": "P12_minor_laceration_known",
+      "tags": ["typical", "known_record"],
+      "origin": "kiosk",
+      "identity": { "name": "Priya Raman", "age": 34, "sex": "F", "patient_id": "NHS-330-812-5567" },
+      "narrative": "Cut my hand on a kitchen knife, bleeding's stopped, probably needs stitches.",
+      "scripted_answers": {
+        "moderate_pain_peripheral": "About a 5 out of 10.",
+        "high_risk_moi": "No, just a kitchen accident.",
+        "anticoagulated": "No."
+      },
+      "default_reply": "No.",
+      "expected": {
+        "category": "GREEN",
+        "rationale": "moderate peripheral pain, no high-risk mechanism, not anticoagulated",
+        "notes": "exercises the record lookup for a patient with a prior history (asthma) that isn't relevant to this complaint"
+      }
+    },
+    {
+      "id": "P13_vertigo_positional",
+      "tags": ["typical"],
+      "origin": "kiosk",
+      "identity": { "name": "Helen Marsh", "age": 52, "sex": "F", "patient_id": "" },
+      "narrative": "Room spins when I turn my head, nothing else going on.",
+      "staff_observations": [
+        { "check_id": "vertigo_positional_only", "positive": true, "note": "symptoms only with head movement, no other neuro signs on exam" }
+      ],
+      "scripted_answers": {
+        "vertigo_positional_only": "Yes, only when I move my head, nothing else."
+      },
+      "default_reply": "No.",
+      "expected": {
+        "category": "YELLOW",
+        "rationale": "vertigo_positional_only, Sec 4.2 Level 3",
+        "notes": "isolated positional vertigo -- must stay below a case with any neuro deficit"
+      }
+    },
+    {
+      "id": "P14_dizzy_low_signal",
+      "tags": ["typical", "ambiguous"],
+      "origin": "kiosk",
+      "identity": { "name": "", "age": 27, "sex": "M", "patient_id": "" },
+      "narrative": "Feeling dizzy, haven't eaten anything since morning.",
+      "scripted_answers": {
+        "vertigo_positional_only": "No, it's not really related to moving my head, just feel light-headed generally."
+      },
+      "default_reply": "No.",
+      "expected": {
+        "category": "BLUE",
+        "rationale": "nothing confirmed positive -- low blood sugar from not eating, no danger signal on any branch",
+        "notes": "the original real case that started this whole investigation -- landing quickly on the right (low) category with no irrelevant questions in between, now that the cubed VOI discount and choose_next() are in place"
+      }
+    },
+    {
+      "id": "P15_deteriorating",
+      "tags": ["deteriorating", "typical"],
+      "origin": "kiosk",
+      "identity": { "name": "Chris Boateng", "age": 45, "sex": "M", "patient_id": "" },
+      "narrative": "Mild headache since this morning, nothing else.",
+      "staff_observations": [
+        { "check_id": "mild_pain_central", "positive": true, "note": "rates the headache 2/10, mild" }
+      ],
+      "scripted_answers": {
+        "mild_pain_central": "About a 2 out of 10."
+      },
+      "default_reply": "No.",
+      "expected": {
+        "category": "GREEN",
+        "rationale": "mild_pain_central only",
+        "notes": "the interim read, before the deterioration below is applied"
+      },
+      "deterioration": {
+        "delay_seconds": 3,
+        "note": "simulates a nurse re-assessment finding a new deficit a short time after arrival",
+        "staff_observations": [
+          { "check_id": "new_neuro_deficit", "positive": true, "note": "new right-sided weakness noted on reassessment" }
+        ],
+        "expected": {
+          "category": "ORANGE",
+          "rationale": "new_neuro_deficit fires Orange on the headache branch -- the initial score is never overwritten, this is a fresh, appended finding",
+          "notes": "demonstrates the reassessment path, not just the first-contact score"
+        }
+      }
+    },
+    {
+      "id": "P16_non_blanching_rash_child",
+      "tags": ["paediatric", "critical"],
+      "origin": "kiosk",
+      "identity": { "name": "", "age": 8, "sex": "M", "patient_id": "" },
+      "narrative": "Child has a rash that isn't going away, feels really unwell.",
+      "staff_observations": [
+        { "check_id": "non_blanching_rash", "positive": true, "note": "rash does not fade under glass test -- non-blanching" },
+        { "check_id": "shock", "positive": true, "note": "cool peripheries, prolonged capillary refill, tachycardic on exam" }
+      ],
+      "scripted_answers": {},
+      "default_reply": "No.",
+      "expected": {
+        "category": "RED",
+        "rationale": "shock is a shared first-order Level-1 check (age-agnostic -- direct clinical observation, not a numeric monitor threshold, so it is not withheld by the paediatric adult-threshold gate); non_blanching_rash alone would only fire Orange on the rash branch",
+        "notes": "third Red case, and a reminder that non_blanching_rash by itself is Orange, not Red -- the septic-shock finding is what makes this one Red"
+      }
+    },
+    {
+      "id": "P17_generic_mild_gi",
+      "tags": ["typical"],
+      "origin": "kiosk",
+      "identity": { "name": "Sandra Lowe", "age": 45, "sex": "F", "patient_id": "" },
+      "narrative": "Just some mild stomach upset since last night, nothing major.",
+      "scripted_answers": {
+        "mild_pain_central": "About a 2 out of 10.",
+        "persistent_vomiting": "No.",
+        "pregnant": "No."
+      },
+      "default_reply": "No.",
+      "expected": {
+        "category": "GREEN",
+        "rationale": "mild central pain only",
+        "notes": "another low-acuity baseline case for the case-mix spread"
+      }
+    },
+    {
+      "id": "P18_syncope_exertional",
+      "tags": ["typical", "critical"],
+      "origin": "kiosk",
+      "identity": { "name": "Robert Nguyen", "age": 60, "sex": "M", "patient_id": "" },
+      "narrative": "Passed out for a few seconds while running, came round quickly, feel fine now.",
+      "staff_observations": [
+        { "check_id": "syncope_exertional", "positive": true, "note": "fainted during exertion, per witness" }
+      ],
+      "scripted_answers": {
+        "syncope_exertional": "Yes, I was running when it happened."
+      },
+      "default_reply": "No.",
+      "expected": {
+        "category": "ORANGE",
+        "rationale": "syncope_exertional fires Orange on the collapse branch -- exertional syncope is a recognised cardiac-cause marker",
+        "notes": "a 'feels fine now' patient whose true acuity would be missed by triaging on symptoms present at that moment alone"
+      }
+    }
+  ]
+}

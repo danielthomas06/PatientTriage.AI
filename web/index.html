@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Triage Station — live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  /* The five triage colours are the subject's own semantic set and are reserved
+     for acuity. The system accent is an indigo that appears nowhere in that
+     scale, so "the tool" never reads as "the patient's state". */
+  :root {
+    --ground:#F6F5FA; --surface:#FFF; --surface-2:#EFEDF6;
+    --line:#E0DDEB; --line-soft:#EDEBF3;
+    --ink:#17141F; --ink-dim:#5D5872; --ink-faint:#8A85A0;
+    --accent:#4F3FD6; --accent-soft:#EBE8FB; --accent-ink:#3527A8;
+    --red:#C92318; --orange:#C25A00; --yellow:#9A7500; --green:#157A4B; --blue:#1F55B0;
+    --red-bg:#FBE9E7; --orange-bg:#FBEEE2; --yellow-bg:#FAF3DC; --green-bg:#E4F4EC; --blue-bg:#E6EEFA;
+    --sans:"IBM Plex Sans",ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;
+    --radius:4px; --shadow:0 1px 2px rgba(23,20,31,.06),0 4px 16px rgba(23,20,31,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:#100E17; --surface:#191622; --surface-2:#221E2E;
+      --line:#2E2939; --line-soft:#241F30;
+      --ink:#EDEAF5; --ink-dim:#A29CB8; --ink-faint:#726C88;
+      --accent:#9C8CFF; --accent-soft:#251F45; --accent-ink:#BCB0FF;
+      --red:#FF6B5E; --orange:#FF9A45; --yellow:#E9C24A; --green:#45D18C; --blue:#6BA3F5;
+      --red-bg:#2E1614; --orange-bg:#2C1D10; --yellow-bg:#29220F; --green-bg:#10261C; --blue-bg:#131F31;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#100E17; --surface:#191622; --surface-2:#221E2E;
+    --line:#2E2939; --line-soft:#241F30;
+    --ink:#EDEAF5; --ink-dim:#A29CB8; --ink-faint:#726C88;
+    --accent:#9C8CFF; --accent-soft:#251F45; --accent-ink:#BCB0FF;
+    --red:#FF6B5E; --orange:#FF9A45; --yellow:#E9C24A; --green:#45D18C; --blue:#6BA3F5;
+    --red-bg:#2E1614; --orange-bg:#2C1D10; --yellow-bg:#29220F; --green-bg:#10261C; --blue-bg:#131F31;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.3);
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+       font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .shell{max-width:1300px;margin:0 auto;padding:18px 18px 40px}
+
+  header.bar{display:flex;align-items:center;gap:18px;flex-wrap:wrap;background:var(--surface);
+    border:1px solid var(--line);border-radius:var(--radius);padding:13px 17px;box-shadow:var(--shadow)}
+  .who strong{font-size:15px;font-weight:600;letter-spacing:-.01em;display:block}
+  .who span{font-family:var(--mono);font-size:11.5px;color:var(--ink-faint)}
+  .sp{flex:1}
+  .tier{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11.5px;
+    padding:5px 11px;border-radius:100px;background:var(--accent-soft);color:var(--accent-ink)}
+  .tier .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+  .tier[data-degraded="true"]{background:var(--yellow-bg);color:var(--yellow)}
+
+  .grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(330px,.9fr);gap:15px;margin-top:15px}
+  @media(max-width:1000px){.grid{grid-template-columns:1fr}}
+
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden}
+  .panel+.panel{margin-top:15px}
+  .ph{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 15px;
+    border-bottom:1px solid var(--line-soft);font-family:var(--mono);font-size:10.5px;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint)}
+  .pb{padding:15px}
+
+  textarea,input[type=text],select{font-family:var(--sans);font-size:14px;color:var(--ink);
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:9px 11px;width:100%}
+  textarea{resize:vertical;min-height:66px;line-height:1.55}
+  textarea:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  label.fl{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--ink-faint);display:block;margin-bottom:6px}
+
+  button{font-family:var(--sans);font-size:13.5px;font-weight:500;padding:9px 15px;
+    border-radius:var(--radius);cursor:pointer;border:1px solid var(--line);
+    background:var(--surface);color:var(--ink);transition:.15s}
+  button:hover:not(:disabled){border-color:var(--accent);color:var(--accent-ink)}
+  button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  button.primary:hover:not(:disabled){background:var(--accent-ink);border-color:var(--accent-ink);color:#fff}
+  .row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .row .grow{flex:1}
+
+  .said{font-size:14.5px;padding:11px 13px;background:var(--surface-2);
+    border-left:2px solid var(--accent);border-radius:2px;margin-bottom:9px}
+  .said:last-child{margin-bottom:0}
+
+  .check{display:grid;grid-template-columns:1fr auto;gap:3px 12px;padding:10px 0;
+    border-bottom:1px solid var(--line-soft)}
+  .check:last-child{border-bottom:0}
+  .check-name{font-weight:500}
+  .check-name.neg{color:var(--ink-dim);font-weight:400}
+  .q{grid-column:1/-1;font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);
+    padding-left:10px;border-left:2px solid var(--line)}
+  .src{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--ink-faint);white-space:nowrap;align-self:start;padding-top:2px}
+  .empty{color:var(--ink-faint);font-size:13px;padding:6px 0}
+
+  .next{display:flex;flex-direction:column;gap:8px;padding:13px 15px;border:1px solid var(--accent);
+    background:var(--accent-soft);border-radius:var(--radius);margin-top:14px}
+  .next-k{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--accent-ink);display:flex;gap:10px;align-items:center}
+  .actor{padding:2px 8px;border-radius:100px;background:var(--surface);color:var(--ink-dim);
+    border:1px solid var(--line);letter-spacing:.06em}
+  .next-q{font-size:15px}
+  .next-why{font-family:var(--mono);font-size:11.5px;color:var(--accent-ink);
+    margin-top:2px;font-style:italic}
+  .pend{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);margin-top:4px}
+  .pend b{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--accent-ink);margin-bottom:5px}
+  .pend div{display:flex;gap:9px;align-items:baseline;padding:2px 0}
+  .pactor{color:var(--ink-faint);white-space:nowrap;min-width:132px}
+
+  .chip{display:flex;align-items:baseline;gap:10px;padding:13px 15px;border-radius:var(--radius);
+    border:1px solid currentColor;transition:.3s}
+  .chip b{font-size:22px;font-weight:700;letter-spacing:-.02em}
+  .chip .t{font-family:var(--mono);font-size:12px;margin-left:auto;font-variant-numeric:tabular-nums;opacity:.85}
+  .chip[data-c=RED]{color:var(--red);background:var(--red-bg)}
+  .chip[data-c=ORANGE]{color:var(--orange);background:var(--orange-bg)}
+  .chip[data-c=YELLOW]{color:var(--yellow);background:var(--yellow-bg)}
+  .chip[data-c=GREEN]{color:var(--green);background:var(--green-bg)}
+  .chip[data-c=BLUE]{color:var(--blue);background:var(--blue-bg)}
+
+  .conf{display:flex;align-items:center;gap:10px;margin-top:12px}
+  .band{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;padding:3px 9px;
+    border-radius:100px;border:1px solid currentColor}
+  .band[data-b=HIGH]{color:var(--green)}
+  .band[data-b=MODERATE]{color:var(--yellow)}
+  .band[data-b=LOW]{color:var(--orange)}
+  .why{font-size:12.5px;color:var(--ink-dim)}
+  .because{font-size:13.5px;margin:12px 0 0}
+  .because .on{color:var(--ink-dim);display:block;margin-top:2px;font-size:12.5px}
+
+  .ledger{display:flex;flex-direction:column;font-family:var(--mono);font-size:11.5px;
+    max-height:320px;overflow-y:auto}
+  .ev{display:grid;grid-template-columns:26px 84px 1fr;gap:9px;padding:7px 0;
+    border-bottom:1px solid var(--line-soft)}
+  .ev:last-child{border-bottom:0}
+  .ev-s{color:var(--ink-faint);font-variant-numeric:tabular-nums}
+  .ev-k[data-k=overridden]{color:var(--accent-ink);font-weight:600}
+  .ev-b{color:var(--ink-dim);overflow-wrap:anywhere}
+  .ev-h{color:var(--ink-faint);font-size:10.5px}
+  .chain{display:flex;gap:8px;font-family:var(--mono);font-size:11px;color:var(--green);
+    padding-top:9px;margin-top:4px;border-top:1px solid var(--line-soft)}
+
+  .queue{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+  .pt{border:1px solid var(--line);border-left-width:3px;border-radius:var(--radius);
+    padding:10px 12px;display:flex;flex-direction:column;gap:4px;cursor:pointer;transition:.15s}
+  .pt:hover{border-color:var(--accent);background:var(--accent-soft)}
+  .pt-bed{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint)}
+  .pt-nobed{font-family:var(--mono);font-size:10.5px;color:var(--orange)}
+  .pt[data-c=RED]{border-left-color:var(--red)}
+  .pt[data-c=ORANGE]{border-left-color:var(--orange)}
+  .pt[data-c=YELLOW]{border-left-color:var(--yellow)}
+  .pt[data-c=GREEN]{border-left-color:var(--green)}
+  .pt-top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+  .pt-id{font-size:13px;font-weight:500}
+  .pt-w{font-family:var(--mono);font-size:11px;color:var(--ink-faint);font-variant-numeric:tabular-nums}
+  .pt-c{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase}
+  .pt[data-c=RED] .pt-c{color:var(--red)}
+  .pt[data-c=ORANGE] .pt-c{color:var(--orange)}
+  .pt[data-c=YELLOW] .pt-c{color:var(--yellow)}
+  .pt[data-c=GREEN] .pt-c{color:var(--green)}
+  .due{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint)}
+  .due.over{color:var(--orange)}
+  .flag{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--orange)}
+  /* A mild, contained flash -- only the overdue patient's own box, never the
+     whole panel, and gentle enough not to read as an alarm someone has to
+     silence. Respects reduced-motion, same as any other looping animation. */
+  .pt[data-overdue="true"] { animation: overdueFlash 2.2s ease-in-out infinite; }
+  @keyframes overdueFlash {
+    0%, 100% { background: var(--surface); box-shadow: none; }
+    50% { background: var(--orange-bg); box-shadow: 0 0 0 1px var(--orange) inset; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pt[data-overdue="true"] { animation: none; background: var(--orange-bg); }
+  }
+  .pt .reassess { width: 100%; font-size: 11.5px; padding: 6px 10px; margin-top: 2px; }
+
+  #intakeQueue{display:flex;flex-wrap:wrap;gap:10px}
+  .in{flex:1 1 220px;border:1px solid var(--line);border-left-width:3px;border-radius:var(--radius);
+    padding:11px 13px;cursor:pointer;transition:.15s;background:var(--surface)}
+  .in:hover{border-color:var(--accent);background:var(--accent-soft)}
+  .in-top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+  .in-name{font-size:13.5px;font-weight:600}
+  .in-w{font-family:var(--mono);font-size:11px;color:var(--ink-faint)}
+  .in-c{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;margin-top:2px;display:block}
+  .in-meta{font-size:11.5px;color:var(--ink-faint);margin-top:3px}
+  .in[data-c=RED]{border-left-color:var(--red)}
+  .in[data-c=ORANGE]{border-left-color:var(--orange)}
+  .in[data-c=YELLOW]{border-left-color:var(--yellow)}
+  .in[data-c=GREEN]{border-left-color:var(--green)}
+  .in[data-c=BLUE]{border-left-color:var(--blue)}
+  .in[data-c=RED] .in-c, .in[data-critical="true"] .in-c{color:var(--red)}
+  .in[data-c=ORANGE] .in-c{color:var(--orange)}
+  .in[data-c=YELLOW] .in-c{color:var(--yellow)}
+  .in[data-c=GREEN] .in-c{color:var(--green)}
+  .in[data-c=BLUE] .in-c{color:var(--blue)}
+  .in[data-critical="true"]{border-left-width:4px;box-shadow:0 0 0 1px var(--red) inset}
+  .in-empty{color:var(--ink-faint);font-size:13px;padding:6px 0}
+
+  .fellback{font-family:var(--mono);font-size:11px;color:var(--ink-dim);
+    background:var(--surface-2);border-radius:var(--radius);padding:9px 11px;margin-top:12px}
+  .fellback b{display:block;margin-bottom:4px;color:var(--ink-faint);
+    letter-spacing:.08em;text-transform:uppercase;font-size:10px}
+  .rejected{font-family:var(--mono);font-size:11px;color:var(--orange);
+    background:var(--orange-bg);border-radius:var(--radius);padding:9px 11px;margin-top:12px}
+  .rejected div{margin-bottom:3px}
+  .rejected div:last-child{margin-bottom:0}
+  .actions-warn{font-family:var(--mono);font-size:11px;color:var(--orange);
+    margin:0 0 10px;line-height:1.5}
+  .action-item{display:flex;gap:9px;align-items:baseline;padding:6px 0;
+    border-bottom:1px solid var(--line-soft);font-size:13px}
+  .action-item:last-child{border-bottom:0}
+  .action-item .n{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);
+    min-width:16px}
+
+  button.voice-btn,button.clear-btn{font-family:var(--mono);font-size:12px;padding:8px 13px}
+  button.clear-btn{color:var(--ink-faint)}
+  button.voice-btn[data-voice-state="listening"]{background:var(--red-bg);color:var(--red);
+    border-color:var(--red);animation:voicePulse 1.1s ease-in-out infinite}
+  button.voice-btn[data-voice-state="transcribing"]{background:var(--accent-soft);color:var(--accent-ink)}
+  @keyframes voicePulse{0%,100%{opacity:1}50%{opacity:.5}}
+  .field-tools{display:flex;gap:5px;margin-top:5px}
+  .field-tools button.voice-btn,.field-tools button.clear-btn{font-size:10.5px;padding:5px 8px;flex:1}
+
+  .photo{display:grid;grid-template-columns:96px 1fr;gap:13px;padding:12px 0;
+    border-bottom:1px solid var(--line-soft)}
+  .photo:last-child{border-bottom:0}
+  .photo-thumb{width:96px;height:96px;border-radius:var(--radius);object-fit:cover;
+    border:1px solid var(--line);background:var(--surface-2);cursor:zoom-in}
+  .photo-caption{font-size:13.5px;line-height:1.5}
+  .photo-meta{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);margin-top:4px}
+  .photo-actions{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
+  .photo-actions select{width:auto;font-size:12.5px;padding:6px 8px}
+  .photo-actions button{font-size:12.5px;padding:6px 12px}
+  .photo-status{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+    padding:3px 9px;border-radius:100px;border:1px solid currentColor}
+  .photo-status[data-s=confirmed]{color:var(--green)}
+  .photo-status[data-s=rejected]{color:var(--ink-faint)}
+  .photo-status[data-s=pending]{color:var(--accent-ink)}
+  .photo-unavailable{font-size:12.5px;color:var(--orange)}
+  .photo-empty{color:var(--ink-faint);font-size:13px;padding:6px 0}
+
+  dialog.camera-dlg{padding:18px;max-width:520px}
+  .camera-body video{width:100%;border-radius:var(--radius);background:#000;display:block}
+  .camera-err{color:var(--red);font-size:13.5px;line-height:1.5}
+  .camera-actions{display:flex;gap:10px;margin-top:14px}
+  .camera-actions button{flex:1}
+
+  .busy{opacity:.55;pointer-events:none}
+  .obs{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;margin-top:9px}
+  .vitals{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px}
+  .flacc{margin-top:16px;padding-top:14px;border-top:1px solid var(--line-soft)}
+  .vitals label{display:flex;flex-direction:column;gap:5px;font-family:var(--mono);
+    font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-faint)}
+  /* Some labels wrap to two lines ("Age (months, if under 2)") and others
+     don't ("Sex") -- without a reserved height the inputs across the same
+     row land at different vertical positions instead of lining up. */
+  .vitals .lbl{display:block;min-height:30px}
+  .vitals input{font-family:var(--mono);font-size:15px;font-variant-numeric:tabular-nums;
+    padding:8px 9px}
+  .vrow{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:12px}
+  .tick{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-dim)}
+  .tick input{width:auto}
+  .vrow button{margin-left:auto}
+  #news2[data-band=high]{color:var(--red)}
+  #news2[data-band=medium]{color:var(--orange)}
+  #news2[data-band=low-medium]{color:var(--yellow)}
+  #news2[data-band=low]{color:var(--green)}
+  #cohortChip[data-guard=true]{color:var(--orange)}
+  .cwarn{font-size:12.5px;padding:9px 11px;border-radius:var(--radius);
+    background:var(--orange-bg);color:var(--orange);border:1px solid currentColor;
+    margin-top:11px}
+  .cwarn div{margin-bottom:4px}
+  .cwarn div:last-child{margin-bottom:0}
+  .rec{font-size:12.5px;padding:9px 11px;border-radius:var(--radius);
+    background:var(--accent-soft);color:var(--accent-ink);margin-top:11px}
+
+  dialog{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);
+    color:var(--ink);padding:0;max-width:460px;width:calc(100% - 40px);
+    box-shadow:0 20px 60px rgba(23,20,31,.28)}
+  dialog::backdrop{background:rgba(23,20,31,.45)}
+  .dh{padding:16px 18px 0}
+  .dh h2{margin:0;font-size:17px;font-weight:600}
+  .dh p{margin:6px 0 0;font-size:13px;color:var(--ink-dim)}
+  .db{padding:16px 18px;display:flex;flex-direction:column;gap:13px}
+  .df{display:flex;gap:8px;justify-content:flex-end;padding:0 18px 18px}
+  .cats{display:flex;gap:6px;flex-wrap:wrap}
+  .cats button{flex:1 1 auto;min-width:76px;font-family:var(--mono);font-size:11.5px}
+  .cats button[aria-pressed=true]{border-width:2px;font-weight:600}
+  .cats button[data-c=RED][aria-pressed=true]{color:var(--red);background:var(--red-bg);border-color:var(--red)}
+  .cats button[data-c=ORANGE][aria-pressed=true]{color:var(--orange);background:var(--orange-bg);border-color:var(--orange)}
+  .cats button[data-c=YELLOW][aria-pressed=true]{color:var(--yellow);background:var(--yellow-bg);border-color:var(--yellow)}
+  .cats button[data-c=GREEN][aria-pressed=true]{color:var(--green);background:var(--green-bg);border-color:var(--green)}
+  .cats button[data-c=BLUE][aria-pressed=true]{color:var(--blue);background:var(--blue-bg);border-color:var(--blue)}
+  .warn{font-size:12.5px;padding:9px 11px;border-radius:var(--radius);background:var(--orange-bg);
+    color:var(--orange);border:1px solid currentColor}
+  .err{font-size:12.5px;color:var(--red);margin-top:6px}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header class="bar">
+    <div class="who">
+      <strong id="ref">—</strong>
+      <span id="whoLine">unidentified · walk-in · live engine, not a recording</span>
+    </div>
+    <div class="sp"></div>
+    <label class="fl" style="margin:0">
+      <input type="checkbox" id="useModel" style="width:auto;margin-right:6px">Use model extraction
+    </label>
+    <div class="tier" id="tier"><i class="dot"></i><span id="tierText">—</span></div>
+    <button id="reset">New patient</button>
+  </header>
+
+  <section class="panel" id="intakePanel">
+    <div class="ph"><span>Kiosk check-ins &mdash; not yet reviewed</span><span id="intakeCount">0</span></div>
+    <div class="pb">
+      <p class="why" style="margin:0 0 10px">
+        Self-reported at a kiosk, nobody's looked yet. Nothing here has been
+        verified &mdash; click a patient to load their record into the panel
+        below and review it the same way you would anything typed in here directly.
+      </p>
+      <div id="intakeQueue"></div>
+    </div>
+  </section>
+
+  <div class="grid">
+    <div>
+      <section class="panel">
+        <div class="ph"><span>Reception &mdash; who is this?</span><span id="cohortChip">&mdash;</span></div>
+        <div class="pb">
+          <div class="vitals">
+            <label><span class="lbl">Name</span><input type="text" id="p_name" placeholder="as given">
+              <div class="field-tools">
+                <button type="button" id="voiceName" class="voice-btn">Speak</button>
+                <button type="button" id="clearName" class="clear-btn">Clear</button>
+              </div>
+            </label>
+            <label><span class="lbl">Age (years)</span><input type="number" id="p_age" min="0" max="120" placeholder="years">
+              <div class="field-tools">
+                <button type="button" id="voiceAge" class="voice-btn">Speak</button>
+                <button type="button" id="clearAge" class="clear-btn">Clear</button>
+              </div>
+            </label>
+            <label><span class="lbl">Age (months, if under 2)</span><input type="number" id="p_age_months" min="0" max="24" placeholder="e.g. 4">
+              <div class="field-tools">
+                <button type="button" id="voiceAgeMonths" class="voice-btn">Speak</button>
+                <button type="button" id="clearAgeMonths" class="clear-btn">Clear</button>
+              </div>
+            </label>
+            <label><span class="lbl">Sex</span><select id="p_sex"><option value="">&mdash;</option><option>F</option><option>M</option><option>Other</option></select>
+              <div class="field-tools">
+                <button type="button" id="voiceSex" class="voice-btn">Speak</button>
+                <button type="button" id="clearSex" class="clear-btn">Clear</button>
+              </div>
+            </label>
+            <label><span class="lbl">Patient ID</span><input type="text" id="p_id" placeholder="NHS-000-000-0000">
+              <div class="field-tools">
+                <button type="button" id="voiceId" class="voice-btn">Speak</button>
+                <button type="button" id="clearId" class="clear-btn">Clear</button>
+              </div>
+            </label>
+          </div>
+          <div class="vrow">
+            <span class="why" id="recordNote">No record looked up yet.</span>
+            <button id="saveId" class="primary">Look up &amp; record</button>
+          </div>
+          <div id="cohortWarn"></div>
+          <p class="why" style="margin:10px 0 0">
+            Age selects the scoring cohort. Leave it blank and the adult thresholds
+            are withheld rather than assumed &mdash; an unknown age is a fail-safe,
+            not a default. Whole years cannot tell a 3-month-old from a newborn,
+            so use the months field for anyone under 2 &mdash; it takes priority
+            over the years field when filled in.
+          </p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="ph"><span>What the patient says</span><span id="tCount">0</span></div>
+        <div class="pb">
+          <div id="said"></div>
+          <label class="fl" for="narrative" style="margin-top:12px">Type as the patient</label>
+          <textarea id="narrative" placeholder="I've had this pain in my upper stomach since about six this morning. I feel sick and I'm a bit sweaty."></textarea>
+          <div class="row">
+            <button id="send" class="primary">Record what they said</button>
+            <button id="example">Use the worked example</button>
+            <button type="button" id="voiceNarrative" class="voice-btn">Speak</button>
+            <button type="button" id="clearNarrative" class="clear-btn">Clear</button>
+          </div>
+          <div id="rejected"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="ph"><span>Vitals</span><span id="news2">&mdash;</span></div>
+        <div class="pb">
+          <div class="vitals">
+            <label>Resp rate<input type="number" id="v_rr" min="0" max="80" placeholder="breaths/min"></label>
+            <label>SpO&#8322; %<input type="number" id="v_spo2" min="50" max="100" placeholder="on air"></label>
+            <label>Systolic<input type="number" id="v_sbp" min="40" max="260" placeholder="mmHg"></label>
+            <label>Pulse<input type="number" id="v_hr" min="20" max="240" placeholder="bpm"></label>
+            <label>Temp &deg;C<input type="number" id="v_temp" min="28" max="43" step="0.1" placeholder="tympanic"></label>
+            <label>Pain 0&ndash;10<input type="number" id="v_pain" min="0" max="10" placeholder="score"></label>
+          </div>
+          <div class="vrow">
+            <label class="tick"><input type="checkbox" id="v_o2"> On oxygen</label>
+            <label class="tick"><input type="checkbox" id="v_alert" checked> Alert on AVPU</label>
+            <label class="tick"><input type="checkbox" id="v_unwell"> Looks unwell (nurse gestalt)</label>
+            <button id="saveVitals" class="primary">Record vitals</button>
+          </div>
+          <p class="why" style="margin:10px 0 0">
+            A measured value settles its checks both ways &mdash; SpO&#8322; 97% is
+            evidence the low-saturation checks are false, not merely unasked.
+            Leave a field blank and it stays unknown. For a child with normal
+            vitals, "looks unwell" is not a detail &mdash; the CTAS appendix warns
+            normal readings in an ill-looking child can mean a pre-arrest state.
+          </p>
+          <div id="paedFloor"></div>
+
+          <div class="flacc">
+            <label class="fl" style="margin-top:14px">
+              Pain, non-verbal / too young to self-report (FLACC) &mdash;
+              <span class="why" style="display:inline">staff-observed, CTAS Appendix F</span>
+            </label>
+            <div class="vitals">
+              <label>Face<select id="f_face">
+                <option value="0">No expression / smile</option>
+                <option value="1">Occasional grimace, withdrawn</option>
+                <option value="2">Constant quivering chin, clenched jaw</option>
+              </select></label>
+              <label>Legs<select id="f_legs">
+                <option value="0">Normal, relaxed</option>
+                <option value="1">Uneasy, restless, tense</option>
+                <option value="2">Kicking, or drawn up</option>
+              </select></label>
+              <label>Activity<select id="f_activity">
+                <option value="0">Lying quietly, moves easily</option>
+                <option value="1">Squirming, tense</option>
+                <option value="2">Arched, rigid, or jerking</option>
+              </select></label>
+              <label>Cry<select id="f_cry">
+                <option value="0">No cry (awake or asleep)</option>
+                <option value="1">Moans, occasional complaint</option>
+                <option value="2">Crying steadily, screams, sobs</option>
+              </select></label>
+              <label>Consolability<select id="f_consolability">
+                <option value="0">Content, relaxed</option>
+                <option value="1">Reassured by touch or talk</option>
+                <option value="2">Difficult to console</option>
+              </select></label>
+            </div>
+            <div class="vrow">
+              <button id="saveFlacc" class="primary">Record FLACC score</button>
+            </div>
+            <p class="why" style="margin:8px 0 0">
+              A patient below about six cannot reliably self-report a number or
+              say where pain spreads &mdash; those questions are withheld for
+              them, and this is the CTAS manual's own alternative: a
+              behavioural score a nurse observes, not one a patient answers.
+              Same 0&ndash;10 scale as the self-report ladder underneath it.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="ph"><span>Other observations</span><span>not asked — seen or measured</span></div>
+        <div class="pb">
+          <div class="obs">
+            <select id="obsCheck"></select>
+            <button id="obsYes">Present</button>
+            <button id="obsNo">Not present</button>
+          </div>
+          <p class="why" style="margin:10px 0 0">
+            A check recorded here comes from staff, not from speech. Both land in
+            the same belief state and the provenance stays visible below.
+          </p>
+        </div>
+      </section>
+
+      <section class="panel" id="photosPanel">
+        <div class="ph"><span>Photos</span><span id="photoCount">0</span></div>
+        <div class="pb">
+          <p class="why" style="margin:0 0 10px">
+            A caption here is a model's proposal, not a recorded finding --
+            confirm or reject each one against the patient in front of you,
+            the same as anything else on this screen a model has suggested.
+          </p>
+          <input type="file" accept="image/*" id="p_photo_upload" hidden>
+          <div class="row">
+            <button type="button" id="btnTakePhoto">Take a photo</button>
+            <button type="button" id="btnUploadPhoto">Upload a photo</button>
+          </div>
+          <div id="photos" style="margin-top:12px"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="ph"><span>Recorded checks</span><span id="cCount">0</span></div>
+        <div class="pb">
+          <div id="checks"></div>
+          <div class="next" id="next" hidden>
+            <div class="next-k"><span>Next observation</span><span class="actor" id="nextActor"></span></div>
+            <div class="next-q" id="nextQ"></div>
+            <div class="next-why" id="nextWhy" hidden></div>
+            <div id="pending"></div>
+            <div id="answerBox" hidden>
+              <input type="text" id="reply" placeholder="Type the patient's reply…">
+              <div class="row">
+                <button id="sendReply" class="primary">Record reply</button>
+                <button type="button" id="voiceReply" class="voice-btn">Speak</button>
+                <button type="button" id="clearReply" class="clear-btn">Clear</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="ph"><span>Waiting queue</span><span id="bedCount">— beds</span></div>
+        <div class="pb"><div class="queue" id="queue"></div></div>
+      </section>
+    </div>
+
+    <div>
+      <section class="panel">
+        <div class="ph"><span>Recommendation</span><span id="hash">—</span></div>
+        <div class="pb">
+          <div class="chip" id="chip" data-c="BLUE"><b id="chipL">—</b><span class="t" id="chipT"></span></div>
+          <p class="because" id="because">Nothing recorded yet.</p>
+          <div class="conf">
+            <span class="band" id="band" data-b="LOW">—</span>
+            <span class="why" id="why"></span>
+          </div>
+          <div class="row">
+            <button id="accept" class="grow">Accept</button>
+            <button id="override" class="primary grow">Override…</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="actionsPanel" hidden>
+        <div class="ph"><span>Suggested first-line actions</span><span id="actionsBranch"></span></div>
+        <div class="pb">
+          <p class="actions-warn">Confirm before acting -- suggested, not a clinical
+            decision. Table not clinician-reviewed; local protocol governs.</p>
+          <div id="actions"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="ph"><span>Plausible branches</span><span>evaluated together</span></div>
+        <div class="pb"><div id="branches" class="empty">—</div></div>
+      </section>
+
+      <section class="panel">
+        <div class="ph"><span>Audit ledger</span><span id="evCount">0</span></div>
+        <div class="pb">
+          <div class="ledger" id="ledger"></div>
+          <div class="chain" id="chain" hidden><span>✓</span><span id="chainT"></span></div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<dialog id="ovDlg">
+  <form method="dialog">
+    <div class="dh">
+      <h2>Override the recommendation</h2>
+      <p id="ovLead"></p>
+    </div>
+    <div class="db">
+      <div>
+        <label class="fl">Your category</label>
+        <div class="cats" id="ovCats">
+          <button type="button" data-c="RED" aria-pressed="false">Immediate</button>
+          <button type="button" data-c="ORANGE" aria-pressed="false">Very urgent</button>
+          <button type="button" data-c="YELLOW" aria-pressed="false">Urgent</button>
+          <button type="button" data-c="GREEN" aria-pressed="false">Standard</button>
+          <button type="button" data-c="BLUE" aria-pressed="false">Non-urgent</button>
+        </div>
+      </div>
+      <div>
+        <label class="fl" for="ovReason">Reason</label>
+        <select id="ovReason">
+          <option value="clinical_judgement">Clinical judgement — looks different to the score</option>
+          <option value="information_missing">Information the tool did not have</option>
+          <option value="information_wrong">Information the tool had wrong</option>
+          <option value="protocol_exception">Local protocol exception</option>
+          <option value="resource_constraint">Resource constraint</option>
+        </select>
+      </div>
+      <div>
+        <label class="fl" for="ovNote">Note</label>
+        <textarea id="ovNote" placeholder="What did you see that the checks did not capture?"></textarea>
+        <div class="row">
+          <button type="button" id="voiceOvNote" class="voice-btn">Speak</button>
+          <button type="button" id="clearOvNote" class="clear-btn">Clear</button>
+        </div>
+      </div>
+      <div>
+        <label class="fl" for="ovWho">Clinician</label>
+        <input type="text" id="ovWho" value="rn.k.mensah">
+        <div class="err" id="ovErr" hidden></div>
+      </div>
+      <p class="warn" id="ovWarn" hidden>
+        You are lowering the priority. The system never de-escalates on its own,
+        so this is recorded as your decision alone.
+      </p>
+    </div>
+    <div class="df">
+      <button value="cancel">Cancel</button>
+      <button value="confirm" class="primary">Record override</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="patientDlg">
+  <form method="dialog">
+    <div class="dh">
+      <h2 id="pdName">—</h2>
+      <p id="pdSub"></p>
+    </div>
+    <div class="db">
+      <div class="chip" id="pdChip" data-c="BLUE"><b id="pdCat">—</b><span class="t" id="pdBed"></span></div>
+      <div id="pdNote"></div>
+      <div id="pdConfidence" class="why" style="margin-top:8px"></div>
+      <div>
+        <label class="fl" style="margin-top:14px">What was recorded</label>
+        <div id="pdChecks"></div>
+      </div>
+      <div>
+        <label class="fl" style="margin-top:14px">What the patient said</label>
+        <div id="pdSaid"></div>
+      </div>
+    </div>
+    <div class="df">
+      <button value="close" class="primary">Close</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="voice.js"></script>
+<script src="photo.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

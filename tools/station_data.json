@@ -1,0 +1,265 @@
+{
+ "narrative": "I've had this pain in my upper stomach since about six this morning. I feel sick and I'm a bit sweaty. It's not going away.",
+ "steps": [
+  {
+   "note": "She arrives and speaks. Nothing extracted yet, so the engine has nothing positive to work with.",
+   "said": null,
+   "checks": [],
+   "ask": null,
+   "cat": "BLUE",
+   "label": "Non-urgent",
+   "band": "LOW",
+   "why": "could still be Very urgent \u2014 25 checks unresolved",
+   "fired": null,
+   "fired_on": null,
+   "decided": false
+  },
+  {
+   "note": "Extraction runs on the local model. Every check carries the exact words behind it \u2014 a finding whose quote is not in the transcript is dropped, not trusted.",
+   "said": "I've had this pain in my upper stomach since about six this morning. I feel sick and I'm a bit sweaty. It's not going away.",
+   "checks": [
+    {
+     "name": "Moderate pain (4-6)",
+     "src": "spoken",
+     "quote": "pain in my upper stomach since about six this morning",
+     "negative": false
+    }
+   ],
+   "ask": null,
+   "cat": "YELLOW",
+   "label": "Urgent",
+   "band": "MODERATE",
+   "why": "could still be Very urgent \u2014 24 checks unresolved",
+   "fired": "Moderate pain (4-6)",
+   "fired_on": "Abdominal pain in adults, Chest pain, Unwell adult",
+   "decided": false
+  },
+  {
+   "note": "An assistant takes vitals alongside the conversation \u2014 not the triage nurse, and not in sequence after her.",
+   "said": "I've had this pain in my upper stomach since about six this morning. I feel sick and I'm a bit sweaty. It's not going away.",
+   "checks": [
+    {
+     "name": "Moderate pain (4-6)",
+     "src": "spoken",
+     "quote": "pain in my upper stomach since about six this morning",
+     "negative": false
+    },
+    {
+     "name": "Very low oxygen saturation",
+     "src": "measured",
+     "quote": "96% on air",
+     "negative": true
+    },
+    {
+     "name": "Shock",
+     "src": "measured",
+     "quote": "BP 138/82, capillary refill under 2s",
+     "negative": true
+    }
+   ],
+   "ask": null,
+   "cat": "YELLOW",
+   "label": "Urgent",
+   "band": "MODERATE",
+   "why": "could still be Very urgent \u2014 22 checks unresolved",
+   "fired": "Moderate pain (4-6)",
+   "fired_on": "Abdominal pain in adults, Chest pain, Unwell adult",
+   "decided": false
+  },
+  {
+   "note": "The solver picks the next observation. It is a question this time \u2014 a saturation probe would go to a device, a conscious level to staff. Note the wording: it never names the jaw.",
+   "said": "I've had this pain in my upper stomach since about six this morning. I feel sick and I'm a bit sweaty. It's not going away.",
+   "checks": [
+    {
+     "name": "Moderate pain (4-6)",
+     "src": "spoken",
+     "quote": "pain in my upper stomach since about six this morning",
+     "negative": false
+    },
+    {
+     "name": "Very low oxygen saturation",
+     "src": "measured",
+     "quote": "96% on air",
+     "negative": true
+    },
+    {
+     "name": "Shock",
+     "src": "measured",
+     "quote": "BP 138/82, capillary refill under 2s",
+     "negative": true
+    }
+   ],
+   "ask": {
+    "actor": "patient",
+    "q": "Where exactly do you feel the pain? Does it go anywhere else?"
+   },
+   "cat": "YELLOW",
+   "label": "Urgent",
+   "band": "MODERATE",
+   "why": "could still be Very urgent \u2014 22 checks unresolved",
+   "fired": "Moderate pain (4-6)",
+   "fired_on": "Abdominal pain in adults, Chest pain, Unwell adult",
+   "decided": false
+  },
+  {
+   "note": "She answers. The check that fires belongs to Chest pain \u2014 ranked second. A nurse who committed to Abdominal pain would never have asked it.",
+   "said": "I've had this pain in my upper stomach since about six this morning. I feel sick and I'm a bit sweaty. It's not going away.",
+   "checks": [
+    {
+     "name": "Moderate pain (4-6)",
+     "src": "spoken",
+     "quote": "pain in my upper stomach since about six this morning",
+     "negative": false
+    },
+    {
+     "name": "Very low oxygen saturation",
+     "src": "measured",
+     "quote": "96% on air",
+     "negative": true
+    },
+    {
+     "name": "Shock",
+     "src": "measured",
+     "quote": "BP 138/82, capillary refill under 2s",
+     "negative": true
+    },
+    {
+     "name": "Pain radiating to jaw, neck or arm",
+     "src": "spoken",
+     "quote": "it goes up into my jaw a bit",
+     "negative": false
+    }
+   ],
+   "ask": {
+    "actor": "patient",
+    "q": "Where exactly do you feel the pain? Does it go anywhere else?",
+    "a": "\u201cUp here under my ribs. And it goes up into my jaw a bit.\u201d"
+   },
+   "cat": "ORANGE",
+   "label": "Very urgent",
+   "band": "HIGH",
+   "why": "nothing unresolved could raise this",
+   "fired": "Pain radiating to jaw, neck or arm",
+   "fired_on": "Chest pain \u2014 ranked #2 in plausibility",
+   "decided": true
+  }
+ ],
+ "recommended": "ORANGE",
+ "ledger": [
+  {
+   "seq": 0,
+   "kind": "observed",
+   "actor": "system",
+   "payload": {
+    "check": "moderate_pain",
+    "value": "true",
+    "quote": "pain in my upper stomach since about six this morning"
+   },
+   "prev": "00000000",
+   "digest": "18d031f9"
+  },
+  {
+   "seq": 1,
+   "kind": "observed",
+   "actor": "system",
+   "payload": {
+    "check": "very_low_spo2",
+    "value": "false",
+    "quote": "96% on air"
+   },
+   "prev": "18d031f9",
+   "digest": "2400618a"
+  },
+  {
+   "seq": 2,
+   "kind": "observed",
+   "actor": "system",
+   "payload": {
+    "check": "shock",
+    "value": "false",
+    "quote": "BP 138/82, capillary refill under 2s"
+   },
+   "prev": "2400618a",
+   "digest": "14481f59"
+  },
+  {
+   "seq": 3,
+   "kind": "observed",
+   "actor": "system",
+   "payload": {
+    "check": "cardiac_pain",
+    "value": "true",
+    "quote": "it goes up into my jaw a bit"
+   },
+   "prev": "14481f59",
+   "digest": "89f199fb"
+  },
+  {
+   "seq": 4,
+   "kind": "decided",
+   "actor": "system",
+   "payload": {
+    "category": "ORANGE",
+    "label": "Very urgent",
+    "fired": "cardiac_pain",
+    "fired_on": [
+     "chest_pain"
+    ],
+    "from_vitals": false,
+    "confidence": {
+     "band": "HIGH",
+     "worst_case": "Very urgent",
+     "p_assigned": 0.991,
+     "unresolved": 21
+    }
+   },
+   "prev": "89f199fb",
+   "digest": "3afd4cf4"
+  },
+  {
+   "seq": 5,
+   "kind": "shown",
+   "actor": "system",
+   "payload": {
+    "to": "rn.k.mensah"
+   },
+   "prev": "3afd4cf4",
+   "digest": "c57b9ebf"
+  },
+  {
+   "seq": 6,
+   "kind": "overridden",
+   "actor": "rn.k.mensah",
+   "payload": {
+    "recommended": "ORANGE",
+    "recommended_label": "Very urgent",
+    "chosen": "RED",
+    "chosen_label": "Immediate",
+    "direction": "escalation",
+    "bands_moved": 1,
+    "reason": "clinical_judgement",
+    "note": "grey, clammy, looks unwell beyond what the checks capture",
+    "system_said": {
+     "fired": "cardiac_pain",
+     "fired_on": [
+      "chest_pain"
+     ],
+     "from_vitals": false
+    },
+    "evidence_at_the_time": [
+     "Moderate pain (4-6)  <- speech: 'pain in my upper stomach since about six this morning'",
+     "Pain radiating to jaw, neck or arm  <- speech: 'it goes up into my jaw a bit'"
+    ]
+   },
+   "prev": "c57b9ebf",
+   "digest": "30dbc345"
+  }
+ ],
+ "targets": {
+  "RED": 0,
+  "ORANGE": 10,
+  "YELLOW": 60,
+  "GREEN": 120,
+  "BLUE": 240
+ }
+}

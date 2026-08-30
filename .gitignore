@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Downloaded, not authored -- see README for the one-line fetch command.
+# ~68MB; would also make every clone slower for no reason.
+models/
+
+# Business/pitch materials -- not code, and one of these alone (261MB) is
+# past GitHub's 100MB per-file push limit. Keep these out of git; share them
+# however you'd share any other document.
+*.pptx
+*.pdf
+~$*.pptx
+~$*.pdf
+6a7c763e089e4_aic_2026/
+
+# Local server logs from manual testing
+serve.log
+*.log

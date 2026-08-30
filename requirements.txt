@@ -1,0 +1,16 @@
+# Tier 1 (hosted model extraction) only. The engine, tripwire, and degraded
+# extraction have no dependencies at all -- that is the point of them.
+anthropic>=0.122.0
+
+# Structured output for every model call (hosted and local) -- narrative
+# extraction, question phrasing, identity extraction, photo captioning.
+# Required for tier 1 and tier 2; tier 3 (keyword-only) runs without it.
+pydantic>=2.0
+
+# Local speech-to-text fallback (triage/local_stt.py) -- only needed if you
+# want the offline voice tier. The app runs fine without it; voice input
+# just falls back to whatever the browser's Web Speech API can do.
+vosk>=0.3.45
+
+# dev
+pytest>=8.0

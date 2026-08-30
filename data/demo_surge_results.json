@@ -1,0 +1,446 @@
+{
+  "surge": [
+    {
+      "id": "P01_ambiguous_epigastric_mi",
+      "ref": "ED-02016-23",
+      "tags": [
+        "ambiguous",
+        "atypical",
+        "known_record"
+      ],
+      "expected": "ORANGE",
+      "actual": "ORANGE",
+      "label": "Very urgent",
+      "confidence": "HIGH",
+      "tier": "local",
+      "questions_asked": [],
+      "match": true,
+      "at_least_as_urgent": true,
+      "over_triaged": false
+    },
+    {
+      "id": "P04_zero_history_abdominal",
+      "ref": "ED-02028-26",
+      "tags": [
+        "zero_history",
+        "ambiguous"
+      ],
+      "expected": "ORANGE",
+      "actual": "ORANGE",
+      "label": "Very urgent",
+      "confidence": "HIGH",
+      "tier": "local",
+      "questions_asked": [],
+      "match": true,
+      "at_least_as_urgent": true,
+      "over_triaged": false
+    },
+    {
+      "id": "P05_cardiac_red",
+      "ref": "ED-02032-27",
+      "tags": [
+        "typical",
+        "critical"
+      ],
+      "expected": "RED",
+      "actual": "RED",
+      "label": "Immediate",
+      "confidence": "HIGH",
+      "tier": "local",
+      "questions_asked": [],
+      "match": true,
+      "at_least_as_urgent": true,
+      "over_triaged": false
+    },
+    {
+      "id": "P07_anaphylaxis",
+      "ref": "ED-02048-29",
+      "tags": [
+        "typical",
+        "critical"
+      ],
+      "expected": "ORANGE",
+      "actual": "ORANGE",
+      "label": "Very urgent",
+      "confidence": "HIGH",
+      "tier": "local",
+      "questions_asked": [],
+      "match": true,
+      "at_least_as_urgent": true,
+      "over_triaged": false
+    },
+    {
+      "id": "P02_infant_fever_flacc",
+      "ref": "ED-02020-24",
+      "tags": [
+        "paediatric",
+        "zero_history"
+      ],
+      "expected": "YELLOW",
+      "actual": "YELLOW",
+      "label": "Urgent",
+      "confidence": "MODERATE",
+      "tier": "local",
+      "questions_asked": [
+        {
+          "check": "persistent_vomiting",
+          "question": "Has the baby been throwing up a lot or refusing to keep any milk down?",
+          "reply": "No."
+        },
+        {
+          "check": "syncope_no_warning",
+          "question": "Has the baby ever gone limp or seemed to lose consciousness, even for a second?",
+          "reply": "No."
+        },
+        {
+          "check": "vertigo_positional_only",
+          "question": "Does the baby seem dizzy or off-balance when you move their head?",
+          "reply": "No."
+        }
+      ],
+      "match": true,
+      "at_least_as_urgent": true,
+      "over_triaged": false
+    },
+    {
+      "id": "P08_stroke_geriatric",
+      "ref": "ED-02109-30",
+      "tags": [
+        "geriatric",
+        "critical"
+      ],
+      "expected": "ORANGE",
+      "actual": "ORANGE",
+      "label": "Very urgent",
+      "confidence": "HIGH",
+      "tier": "local",
+      "questions_asked": [],
+      "match": true,
+      "at_least_as_urgent": true,
+      "over_triaged": false
+    },
+    {
+      "id": "P03_geriatric_falsely_reassuring",
+      "ref": "ED-02024-25",
+      "tags": [
+        "geriatric",
+        "known_record"
+      ],
+      "expected": "YELLOW",
+      "actual": "ORANGE",
+      "label": "Very urgent",
+      "confidence": "HIGH",
+      "tier": "local",
+      "questions_asked": [
+        {
+          "check": "moderate_pain_central",
+          "question": "On a scale from 0 to 10, how much pain are you feeling right now?",
+          "reply": "No."
+        },
+        {
+          "check": "severe_pain_central",
+          "question": "Are you having any pain in your chest, stomach, or head right now?",
+          "reply": "No."
+        },
+        {
+          "check": "persistent_vomiting",
+          "question": "Have you been throwing up more than a few times in the last day?",
+          "reply": "No."
+        },
+        {
+          "check": "syncope_no_warning",
+          "question": "Did you feel any warning signs, like dizziness or a racing heart, before you had to stop moving?",
+          "reply": "No."
+        }
+      ],
+      "match": false,
+      "at_least_as_urgent": true,
+      "over_triaged": true
+    },
+    {
+      "id": "P09_toddler_looks_unwell",
+      "ref": "ED-02114-31",
+      "tags": [
+        "paediatric"
+      ],
+      "expected": "YELLOW",
+      "actual": "ORANGE",
+      "label": "Very urgent",
+      "confidence": "HIGH",
+      "tier": "local",
+      "questions_asked": [],
+      "match": false,
+      "at_least_as_urgent": true,
+      "over_triaged": true
+    },
+    {
+      "id": "P06_minor_ankle_sprain",
+      "ref": "ED-02042-28",
+      "tags": [
+        "typical"
+      ],
+      "expected": "GREEN",
+      "actual": "GREEN",
+      "label": "Standard",
+      "confidence": "LOW",
+      "tier": "keyword",
+      "questions_asked": [
+        {
+          "check": "high_risk_moi",
+          "question": "Did you hit your head or feel dizzy after twisting your ankle?",
+          "reply": "No, just twisted it running."
+        },
+        {
+          "check": "mild_pain_central",
+          "question": "On a scale from one to ten, how bad is the pain right now?",
+          "reply": "No."
+        },
+        {
+          "check": "pain_radiating",
+          "question": "Does the pain stay in your ankle, or does it move up your leg or into your back?",
+          "reply": "No."
+        },
+        {
+          "check": "moderate_pain_peripheral",
+          "question": "How much does it hurt on a scale from one to ten?",
+          "reply": "About a 5 out of 10."
+        }
+      ],
+      "match": true,
+      "at_least_as_urgent": true,
+      "over_triaged": false
+    },
+    {
+      "id": "P10_self_harm_risk",
+      "ref": "ED-02128-32",
+      "tags": [
+        "typical",
+        "critical",
+        "sensitive"
+      ],
+      "expected": "ORANGE",
+      "actual": "ORANGE",
+      "label": "Very urgent",
+      "confidence": "HIGH",
+      "tier": "local",
+      "questions_asked": [],
+      "match": true,
+      "at_least_as_urgent": true,
+      "over_triaged": false
+    },
+    {
+      "id": "P11_third_trimester_bleeding",
+      "ref": "ED-02130-33",
+      "tags": [
+        "typical",
+        "critical"
+      ],
+      "expected": "RED",
+      "actual": "RED",
+      "label": "Immediate",
+      "confidence": "HIGH",
+      "tier": "local",
+      "questions_asked": [],
+      "match": true,
+      "at_least_as_urgent": true,
+      "over_triaged": false
+    },
+    {
+      "id": "P14_dizzy_low_signal",
+      "ref": "ED-02143-36",
+      "tags": [
+        "typical",
+        "ambiguous"
+      ],
+      "expected": "BLUE",
+      "actual": "BLUE",
+      "label": "Non-urgent",
+      "confidence": "LOW",
+      "tier": "local",
+      "questions_asked": [],
+      "match": true,
+      "at_least_as_urgent": true,
+      "over_triaged": false
+    },
+    {
+      "id": "P16_non_blanching_rash_child",
+      "ref": "ED-02155-38",
+      "tags": [
+        "paediatric",
+        "critical"
+      ],
+      "expected": "RED",
+      "actual": "RED",
+      "label": "Immediate",
+      "confidence": "HIGH",
+      "tier": "local",
+      "questions_asked": [],
+      "match": true,
+      "at_least_as_urgent": true,
+      "over_triaged": false
+    },
+    {
+      "id": "P12_minor_laceration_known",
+      "ref": "ED-02136-34",
+      "tags": [
+        "typical",
+        "known_record"
+      ],
+      "expected": "GREEN",
+      "actual": "GREEN",
+      "label": "Standard",
+      "confidence": "LOW",
+      "tier": "local",
+      "questions_asked": [
+        {
+          "check": "high_risk_moi",
+          "question": "Did the cut happen in a way that might have hit a bone or tendon, like a deep slice or a heavy impact?",
+          "reply": "No, just a kitchen accident."
+        },
+        {
+          "check": "mild_pain_central",
+          "question": "On a scale of 1 to 10, how much does the cut hurt right now?",
+          "reply": "No."
+        },
+        {
+          "check": "persistent_vomiting",
+          "question": "Have you been throwing up more than once in the last few hours?",
+          "reply": "No."
+        },
+        {
+          "check": "moderate_pain_peripheral",
+          "question": "How would you describe the pain level right now, from mild to severe?",
+          "reply": "About a 5 out of 10."
+        }
+      ],
+      "match": true,
+      "at_least_as_urgent": true,
+      "over_triaged": false
+    },
+    {
+      "id": "P15_deteriorating",
+      "ref": "ED-02145-37",
+      "tags": [
+        "deteriorating",
+        "typical"
+      ],
+      "expected": "GREEN",
+      "actual": "GREEN",
+      "label": "Standard",
+      "confidence": "LOW",
+      "tier": "local",
+      "questions_asked": [
+        {
+          "check": "thunderclap_headache",
+          "question": "Did the pain hit you all at once, like a sudden bang, or did it build up slowly?",
+          "reply": "No."
+        },
+        {
+          "check": "sudden_vision_loss",
+          "question": "Have you noticed any changes in your eyesight, like things looking blurry or dark?",
+          "reply": "No."
+        }
+      ],
+      "match": true,
+      "at_least_as_urgent": true,
+      "over_triaged": false,
+      "deterioration": {
+        "expected": "ORANGE",
+        "actual": "ORANGE",
+        "label": "Very urgent",
+        "match": true
+      }
+    },
+    {
+      "id": "P13_vertigo_positional",
+      "ref": "ED-02137-35",
+      "tags": [
+        "typical"
+      ],
+      "expected": "YELLOW",
+      "actual": "YELLOW",
+      "label": "Urgent",
+      "confidence": "MODERATE",
+      "tier": "local",
+      "questions_asked": [
+        {
+          "check": "new_neuro_deficit",
+          "question": "Have you noticed any new weakness, numbness, or trouble speaking or seeing?",
+          "reply": "No."
+        },
+        {
+          "check": "severe_pain_central",
+          "question": "On a scale from one to ten, how bad is the pain or discomfort you are feeling right now?",
+          "reply": "No."
+        },
+        {
+          "check": "syncope_exertional",
+          "question": "Have you felt like you were going to pass out or actually fainted when you were moving or doing physical activity?",
+          "reply": "No."
+        },
+        {
+          "check": "bleeding_third_trimester",
+          "question": "Are you currently pregnant?",
+          "reply": "No."
+        }
+      ],
+      "match": true,
+      "at_least_as_urgent": true,
+      "over_triaged": false
+    },
+    {
+      "id": "P18_syncope_exertional",
+      "ref": "ED-02180-40",
+      "tags": [
+        "typical",
+        "critical"
+      ],
+      "expected": "ORANGE",
+      "actual": "ORANGE",
+      "label": "Very urgent",
+      "confidence": "HIGH",
+      "tier": "local",
+      "questions_asked": [],
+      "match": true,
+      "at_least_as_urgent": true,
+      "over_triaged": false
+    },
+    {
+      "id": "P17_generic_mild_gi",
+      "ref": "ED-02173-39",
+      "tags": [
+        "typical"
+      ],
+      "expected": "GREEN",
+      "actual": "GREEN",
+      "label": "Standard",
+      "confidence": "LOW",
+      "tier": "local",
+      "questions_asked": [
+        {
+          "check": "persistent_vomiting",
+          "question": "Have you been throwing up more than a few times, or is it just feeling queasy?",
+          "reply": "No."
+        },
+        {
+          "check": "severe_pain_central",
+          "question": "On a scale from one to ten, how bad is the pain in your belly right now?",
+          "reply": "No."
+        },
+        {
+          "check": "mild_pain_central",
+          "question": "Since you said it's mild, is the discomfort mostly in the middle of your belly, or is it more on one side?",
+          "reply": "About a 2 out of 10."
+        },
+        {
+          "check": "throat_or_tongue_swelling",
+          "question": "Do you feel any swelling in your throat or tongue, or does it feel like your airway is closing?",
+          "reply": "No."
+        }
+      ],
+      "match": true,
+      "at_least_as_urgent": true,
+      "over_triaged": false
+    }
+  ]
+}
