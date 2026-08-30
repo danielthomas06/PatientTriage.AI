@@ -71,6 +71,63 @@ replay.
 → `sim/`'s default scenario runs at 110% of clinician capacity on purpose —
 see *Evaluation* below for why that's load-bearing, not incidental.
 
+> "Surface uncertainty explicitly — the prototype must not return a score
+> without a confidence indicator."
+
+→ `triage/core.py`'s `Confidence` is a required field on every `Decision`,
+not an optional extra — enforced by the type, not by remembering to attach
+one. It's a fact about how much is still unanswered (the gap between the
+category assigned from *confirmed* positives and the worst case still
+carrying real probability), never a model's opinion of its own certainty.
+
+> "State your assumed regulatory jurisdiction... This affects your audit
+> trail design, data retention policy, consent model, and what a clinician
+> override must legally record."
+
+→ **Assumed jurisdiction: UK — UK GDPR + the Data Protection Act 2018.**
+`triage/audit.py`'s `DATA_PROTECTION` states the full position directly:
+health data is Article 9 special-category data, the lawful basis is Art
+6(1)(e) public task + Art 9(2)(h) health and social care — **not consent**,
+which is recorded separately and only for genuinely optional processing
+(capturing audio) that must be refusable without losing access to triage.
+Audio is discarded after extraction; only the cited spans are retained.
+Audit events are retained per the NHS records retention schedule, and the
+engine never calls out with the local model tier — no narrative leaves the
+building at all. Run `python demo_cases.py` to see this printed in full,
+alongside a live override.
+
+> "Adoption & change management — how you'd get a fatigued, time-pressured
+> staff to actually trust and use the tool rather than work around it."
+
+→ The mechanism most directly aimed at this is `Ledger.override_rate()` and
+`triage/audit.py`'s fleet-wide override-metrics breakdown, and the reasoning
+is worth stating plainly rather than leaving implicit: **a near-zero
+override rate is not success.** It usually means staff have stopped reading
+and are clicking Accept — the automation-bias failure this system is built
+to make visible rather than reward. A rate that climbs in one specific
+reason code (`information_missing`, `information_wrong`, `protocol_exception`,
+...) says which part of the tool is actually wrong, which is the signal a
+team would need to fix trust rather than just measure its absence.
+`test_override_metrics_break_down_by_reason_and_direction` pins the shape of
+this.
+
+## Assumptions taken from the brief's Reference Parameters
+
+Stated explicitly, as asked, rather than left implicit:
+
+- **Scale**: 100–500+ visits/day. The evaluation harness's default
+  arrivals-per-hour (15/hr sustained) lands in this range; not independently
+  tuned to it beyond that.
+- **Severity scale**: CTAS's own **5** levels (Immediate / Very urgent /
+  Urgent / Standard / Non-urgent) rather than a proposed alternative — see
+  *Two protocol packs* below for why the engine doesn't actually care which
+  scale a pack uses.
+- **Mixed data availability**: "roughly half of arrivals have a prior record
+  and half do not" is taken literally — `serve.py`'s `KNOWN_PATIENTS` says so
+  in its own comment, and it's exactly why the zero-history path gets equal
+  weight to the known-record path rather than being an edge case.
+- **Regulatory jurisdiction**: UK, as stated above.
+
 ## Two protocol packs
 
 The engine imports neither pack by name — swap the data file and it triages
@@ -197,6 +254,19 @@ moved on to the next patient.
 desktop browsers simply ignore.
 
 ## The demo dataset
+
+**Not the same thing as *Evaluation* below, and worth being explicit about
+the difference.** This section is 18 *named* patients run through the
+**real HTTP API** — actual narrative text, actual extraction, actual
+`decide()` calls, the same code path a kiosk uses. *Evaluation* further down
+is a separate, much larger **statistical** simulation over 2000 *synthetic*
+patients that never touches the HTTP API at all, built to answer a
+different question ("does this policy measurably reduce under-triage across
+a large population") that 18 hand-picked cases can't answer on their own.
+They even each have their own "surge" — this section's surge replays the
+same 18 real patients concurrently; `sim/`'s surge (`run_sim.py --surge`) is
+1200 synthetic arrivals against a deliberately thinned department. Nothing
+here shares code or data with `sim/`.
 
 `data/demo_patients.json` — 18 patient records covering the brief's named
 cases (ambiguous, paediatric, geriatric, zero-history) plus a spread across
@@ -349,6 +419,11 @@ needed the bay.
 Both were found by tests failing, not by inspection.
 
 ## Evaluation
+
+*(This is the statistical harness — synthetic patients, 2000 arrivals, no
+HTTP calls. Not to be confused with the demo dataset above, which is 18
+named patients through the real API. See that section's callout if you
+haven't read it yet.)*
 
 `sim/` is a discrete-event department: finite triage nurses and clinicians,
 a waiting room, patients who leave unseen. Both arms consume the
